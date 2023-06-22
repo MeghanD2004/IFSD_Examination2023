@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://unpkg.com/react/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/babel-standalone"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    class Politician {
+      constructor(name, votes, money) {
+        this.name = name;
+        this.votes = votes;
+        this.money = money;
+      }
+    }
+
+    function PoliticianForm({ onSubmit, onUpdate, isEditMode, politicianToEdit }) {
+      const [name, setName] = React.useState('');
+      const [votes, setVotes] = React.useState('');
+      const [money, setMoney] = React.useState('');
+
+      React.useEffect(() => {
+        if (isEditMode && politicianToEdit) {
+          setName(politicianToEdit.name);
+          setVotes(politicianToEdit.votes);
+          setMoney(politicianToEdit.money);
+        }
+      }, [isEditMode, politicianToEdit]);
+
+      function handleSubmit(e) {
+        e.preventDefault();
+        if (isEditMode) {
+          onUpdate(politicianToEdit, new Politician(name, votes, money));
+        } else {
+          onSubmit(new Politician(name, votes, money));
+        }
+        setName('');
+        setVotes('');
+        setMoney('');
+      }
+
+      return (
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Politician name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+          />
+          <input
+            type="number"
+            placeholder="Votes"
+            value={votes}
+            onChange={e => setVotes(parseInt(e.target.value))}
+          />
+          <input
+            type="number"
+            placeholder="Money"
+            value={money}
+            onChange={e => setMoney(parseInt(e.target.value))}
+          />
+          <button type="submit">{isEditMode ? 'Update' : 'Add Politician'}</button>
+        </form>
+      );
+    }
+
+    function PoliticianList({ politicians, onDelete, onEdit }) {
+      return (
+        <ul>
+          {politicians.map(politician => (
+            <li key={politician.name}>
+              {politician.name} - Votes: {politician.votes}, Money: {politician.money}
+              <button onClick={() => onDelete(politician)}>Delete</button>
+              <button onClick={() => onEdit(politician)}>Update</button>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    function TeamComponent() {
+      const [politicians, setPoliticians] = React.useState([]);
+      const [isEditMode, setIsEditMode] = React.useState(false);
+      const [politicianToEdit, setPoliticianToEdit] = React.useState(null);
+
+      function handleAddPolitician(politician) {
+        setPoliticians([...politicians, politician]);
+      }
+
+      function handleDeletePolitician(politician) {
+        setPoliticians(politicians.filter(p => p !== politician));
+      }
+
+      function handleEditPolitician(politician) {
+        setIsEditMode(true);
+        setPoliticianToEdit(politician);
+      }
+
+      function handleUpdatePolitician(oldPolitician, updatedPolitician) {
+        setPoliticians(politicians.map(politician => {
+          if (politician.name === oldPolitician.name) {
+            return updatedPolitician;
+          }
+          return politician;
+        }));
+        setIsEditMode(false);
+        setPoliticianToEdit(null);
+      }
+
+      function calculateAverageVotes() {
+        if (politicians.length === 0) {
+          return 0;
+        }
+        const totalVotes = politicians.reduce((sum, politician) => sum + politician.votes, 0);
+        return totalVotes / politicians.length;
+      }
+
+      function calculateMaximumVotes() {
+        if (politicians.length === 0) {
+          return 0;
+        }
+        return Math.max(...politicians.map(politician => politician.votes));
+      }
+
+      function calculateMaximumMoney() {
+        if (politicians.length === 0) {
+          return 0;
+        }
+        return Math.max(...politicians.map(politician => politician.money));
+      }
+
+      return (
+        <div>
+          <h1>My Team</h1>
+          <PoliticianForm
+            onSubmit={handleAddPolitician}
+            onUpdate={handleUpdatePolitician}
+            isEditMode={isEditMode}
+            politicianToEdit={politicianToEdit}
+          />
+          {politicians.length > 0 ? (
+            <PoliticianList
+              politicians={politicians}
+              onDelete={handleDeletePolitician}
+              onEdit={handleEditPolitician}
+            />
+          ) : (
+            <p>No politicians added yet.</p>
+          )}
+          <p>Average votes: {calculateAverageVotes()}</p>
+          <p>Maximum votes: {calculateMaximumVotes()}</p>
+          <p>Maximum money: {calculateMaximumMoney()}</p>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<TeamComponent />, document.getElementById('root'));
+  </script>
+</body>
+
+</html>
